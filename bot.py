@@ -1,30 +1,98 @@
-# pip install discord.py
+# By Pytel
 
+import json
 import discord
 from discord.ext import commands
 import random
+import socket
+import argparse
+import subprocess
 
-CONFIG_FILE = 'api_token.conf'
+DEBUG = True
+VERBOSE = True
+
+CONFIG_FILE = 'config.json'
+API_TOKEN = None
+CHANNEL_ID = None
+SERVER_ID = None
+CATEGORY_ID = None
 
 intents = discord.Intents.default()
 intents.message_content = True
-description = '''My first Discord bot'''
-bot = commands.Bot(command_prefix='?', description=description, intents=intents)
+description = '''Server controler bot'''
+bot = commands.Bot(command_prefix='$',
+                   description=description, intents=intents)
 guild = discord.Guild
+
+async def create_channel_for_this_pc(server: int, category_id: int = None):
+    """
+    Creates a new channel for the current PC if it doesn't exist
+
+    Args:
+        server (int): ID of the server
+    """
+    guild = bot.get_guild(server)
+    category = guild.get_channel(category_id)
+    uname = socket.gethostname()
+
+    text_channel_list = []
+    for channel in guild.text_channels:
+        text_channel_list.append(channel)
+
+    text_channel_list_names = [channel.name for channel in text_channel_list]
+
+    if DEBUG:
+        print('This PC:', uname)
+        print('Existing channels:', text_channel_list_names)
+
+    if uname.lower() not in text_channel_list_names:
+        if VERBOSE:
+            print('Creating new channel:', uname)
+        await guild.create_text_channel(uname, category=category)
 
 
 @bot.event
 async def on_ready():
     print('Hello {0.user} !'.format(bot))
     await bot.change_presence(activity=discord.Game('👀'))
+    await create_channel_for_this_pc(SERVER_ID, CATEGORY_ID)
+    print('------')
+    # await sendFromConsole()
 
 
 @bot.event
 async def on_message(message):
     message_content = message.content
     message_author = message.author
-    print(f'New message -> {message_author} said: {message_content}')
+    message_channel = message.channel
+    # print(message)
+    if VERBOSE:
+        print(
+            f'New message -> {message_author}, in channel: {message_channel}, said: {message_content}')
     await bot.process_commands(message)
+
+
+@bot.command()
+async def test(ctx, arg):
+    await ctx.send(arg)
+
+
+@bot.command()
+async def ping(ctx):
+    await ctx.send('pong')
+
+
+@bot.command()
+async def run(ctx, arg):
+    commnad, *args = arg.split(' ')
+    print("Running command:", commnad, args)
+    output = subprocess.run(
+        [commnad, *args],
+        capture_output=True
+    )
+    print(output)
+    await ctx.send(output.stdout.decode('utf-8'))
+
 
 @bot.command()
 async def roll(ctx, dice: str):
@@ -39,7 +107,40 @@ async def roll(ctx, dice: str):
     await ctx.send(result)
 
 
+@bot.event
+async def sendFromConsole():
+    run = True
+    while run:
+        message = input('Enter message: ')
+        channel = bot.get_channel(CHANNEL_ID)
+        await channel.send(message)
+
+
+def arg_parser():
+    parser = argparse.ArgumentParser(description='Discord bot')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Enable debug mode')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable verbose mode')
+    args = parser.parse_args()
+    # DEBUG = args.debug
+    # VERBOSE = args.verbose
+    if DEBUG:
+        print(args)
+
+
+def load_config(config_file: str = CONFIG_FILE):
+    config = json.load(open(CONFIG_FILE))
+    if DEBUG:
+        print(json.dumps(config, indent=4, sort_keys=True))
+    return config['API_TOKEN'], config['CHANNEL_ID'], config['SERVER_ID'], config['CATEGORY_ID']
+
+API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID = load_config()
+
 if __name__ == "__main__":
-    with open(CONFIG_FILE, 'r') as f:
-        API_TOKEN = f.readline().strip()
+    arg_parser()
+    
+    print(API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID)
+
     bot.run(API_TOKEN)
+    
