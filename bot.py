@@ -82,6 +82,31 @@ async def ping(ctx):
     await ctx.send('pong')
 
 
+def split_message(message: str, max_length: int = 2000):
+    """
+    Splits a message into multiple messages with max length of max_length
+
+    Args:
+        message (str): Message to split
+        max_length (int, optional): Max length of a message. Defaults to 2000.
+
+    Returns:
+        list: List of messages
+    """
+    return [message[i:i+max_length] for i in range(0, len(message), max_length)]
+
+async def send_message_to_channel(channel_id: int, message: str):
+    """
+    Sends a message to a channel
+
+    Args:
+        channel_id (int): ID of the channel
+        message (str): Message to send
+    """
+    channel = bot.get_channel(channel_id)
+    for msg in split_message(message):
+        await channel.send(msg)
+
 @bot.command()
 async def run(ctx, arg):
     commnad, *args = arg.split(' ')
@@ -90,8 +115,10 @@ async def run(ctx, arg):
         [commnad, *args],
         capture_output=True
     )
-    print(output)
-    await ctx.send(output.stdout.decode('utf-8'))
+    if VERBOSE:
+        print(output)
+    
+    await send_message_to_channel(ctx.channel.id, output.stdout.decode('utf-8'))
 
 
 @bot.command()
