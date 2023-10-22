@@ -149,14 +149,44 @@ def arg_parser():
                         help='Enable debug mode')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose mode')
+    parser.add_argument('-c', '--config', action='store_true', 
+                        help='Create new config file')
+
     args = parser.parse_args()
     # DEBUG = args.debug
     # VERBOSE = args.verbose
     if DEBUG:
         print(args)
+    if args.config:
+        create_config()
+        exit(0)
 
+
+def create_config(config_file: str = CONFIG_FILE):
+    """
+    Creates a new config file
+
+    Args:
+        config_file (str, optional): Path to config file. Defaults to CONFIG_FILE.
+    """
+    config = {}
+    config['API_TOKEN'] = input('Enter API token: ')
+    config['CHANNEL_ID'] = int(input('Enter channel ID: '))
+    config['SERVER_ID'] = int(input('Enter server ID: '))
+    config['CATEGORY_ID'] = int(input('Enter category ID: '))
+
+    json.dump(config, open(config_file, 'w'), indent=4, sort_keys=True)
 
 def load_config(config_file: str = CONFIG_FILE):
+    """
+    Loads config file
+
+    Args:
+        config_file (str, optional): Path to config file. Defaults to CONFIG_FILE.
+
+    Returns:
+        tuple: Tuple containing API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID
+    """
     config = json.load(open(CONFIG_FILE))
     if DEBUG:
         print(json.dumps(config, indent=4, sort_keys=True))
