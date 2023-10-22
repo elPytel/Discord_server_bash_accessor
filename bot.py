@@ -7,6 +7,7 @@ import random
 import socket
 import argparse
 import subprocess
+from tools import *
 
 DEBUG = True
 VERBOSE = True
@@ -27,10 +28,9 @@ COMMAND_PREFIX = '$'
 intents = discord.Intents.default()
 intents.message_content = True
 description = '''Server controler bot'''
-bot = commands.Bot(command_prefix='COMMAND_PREFIX',
+bot = commands.Bot(command_prefix=COMMAND_PREFIX,
                    description=description, intents=intents)
 guild = discord.Guild
-
 
 def get_channel_id(channel_name: str, server_id: int) -> int:
     """
@@ -48,7 +48,6 @@ def get_channel_id(channel_name: str, server_id: int) -> int:
         if channel.name == channel_name:
             return channel.id
     return None
-
 
 async def create_channel_for_this_pc(server: int, category_id: int = None):
     """
@@ -76,7 +75,7 @@ async def create_channel_for_this_pc(server: int, category_id: int = None):
             print('Creating new channel:', uname)
         await guild.create_text_channel(uname, category=category)
 
-    global CHANNEL_ID 
+    global CHANNEL_ID
     CHANNEL_ID = get_channel_id(uname, server)
     if VERBOSE:
         print('Setting channel ID to:', CHANNEL_ID)
@@ -124,6 +123,12 @@ async def on_message(message):
             print(INFO, 'Wrong channel: {0.channel.id}'.format(message))
         return
 
+    # if its bot do nothing
+    if message.author == bot.user:
+        if VERBOSE:
+            print(INFO, 'Bot message')
+        return
+
     if DEBUG:
         print('Executing command...')
     await bot.process_commands(message)
@@ -139,20 +144,6 @@ async def test(ctx, arg):
 @bot.command()
 async def ping(ctx):
     await ctx.send('pong')
-
-
-def split_message(message: str, max_length: int = 2000):
-    """
-    Splits a message into multiple messages with max length of max_length
-
-    Args:
-        message (str): Message to split
-        max_length (int, optional): Max length of a message. Defaults to 2000.
-
-    Returns:
-        list: List of messages
-    """
-    return [message[i:i+max_length] for i in range(0, len(message), max_length)]
 
 
 async def send_message_to_channel(channel_id: int, message: str):
@@ -232,7 +223,6 @@ def create_config(config_file: str = CONFIG_FILE):
     """
     config = {}
     config['API_TOKEN'] = input('Enter API token: ')
-    config['CHANNEL_ID'] = int(input('Enter channel ID: '))
     config['SERVER_ID'] = int(input('Enter server ID: '))
     config['CATEGORY_ID'] = int(input('Enter category ID: '))
 
@@ -252,14 +242,14 @@ def load_config(config_file: str = CONFIG_FILE) -> tuple:
     config = json.load(open(CONFIG_FILE))
     if DEBUG:
         print(json.dumps(config, indent=4, sort_keys=True))
-    return config['API_TOKEN'], config['CHANNEL_ID'], config['SERVER_ID'], config['CATEGORY_ID']
+    return config['API_TOKEN'], config['SERVER_ID'], config['CATEGORY_ID']
 
 
-API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID = load_config()
+API_TOKEN, SERVER_ID, CATEGORY_ID = load_config()
 
 if __name__ == "__main__":
     arg_parser()
 
-    print(API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID)
+    print(API_TOKEN, SERVER_ID, CATEGORY_ID)
 
     bot.run(API_TOKEN)
