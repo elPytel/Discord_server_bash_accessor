@@ -59,7 +59,7 @@ async def create_channel_for_this_pc(server: int, category_id: int = None):
     """
     guild = bot.get_guild(server)
     category = guild.get_channel(category_id)
-    uname = socket.gethostname()
+    uname = socket.gethostname().lower()
 
     text_channel_list = []
     for channel in guild.text_channels:
@@ -71,15 +71,20 @@ async def create_channel_for_this_pc(server: int, category_id: int = None):
         print('This PC:', uname)
         print('Existing channels:', text_channel_list_names)
 
-    if uname.lower() not in text_channel_list_names:
+    if uname not in text_channel_list_names:
         if VERBOSE:
             print('Creating new channel:', uname)
         await guild.create_text_channel(uname, category=category)
 
+    global CHANNEL_ID 
+    CHANNEL_ID = get_channel_id(uname, server)
     if VERBOSE:
-        print('Setting channel ID')
-    CHANNEL_ID = get_channel_id(uname, SERVER_ID)
+        print('Setting channel ID to:', CHANNEL_ID)
+
     if CHANNEL_ID is None:
+        print("Channel: {0} not in server: {1}".format(uname, server))
+        for channel in guild.text_channels:
+            print(channel.name)
         raise Exception(
             'Channel ID is None, unable to verify if channel was created!')
 
@@ -119,20 +124,15 @@ async def on_message(message):
             print(INFO, 'Wrong channel: {0.channel.id}'.format(message))
         return
 
-    # check if message is a command
-    if not message.content.startswith(COMMAND_PREFIX):
-        if VERBOSE:
-            print(INFO, 'Not a command: {0.content}'.format(message))
-        await message.send(
-            f'Not a valid command! \n' + 
-            f'\t you started with: {message.content[0]} \n' + 
-            f'\t command prefix is: {COMMAND_PREFIX}')
-
+    if DEBUG:
+        print('Executing command...')
     await bot.process_commands(message)
 
 
 @bot.command()
 async def test(ctx, arg):
+    if DEBUG:
+        print('Test command:', arg)
     await ctx.send(arg)
 
 
