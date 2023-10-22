@@ -17,12 +17,38 @@ CHANNEL_ID = None
 SERVER_ID = None
 CATEGORY_ID = None
 
+ERROR = '❌'
+SUCCESS = '✅'
+WARNING = '⚠️'
+INFO = 'ℹ️'
+
+COMMAND_PREFIX = '$'
+
 intents = discord.Intents.default()
 intents.message_content = True
 description = '''Server controler bot'''
-bot = commands.Bot(command_prefix='$',
+bot = commands.Bot(command_prefix='COMMAND_PREFIX',
                    description=description, intents=intents)
 guild = discord.Guild
+
+
+def get_channel_id(channel_name: str, server_id: int) -> int:
+    """
+    Gets channel ID from channel name
+
+    Args:
+        channel_name (str): Name of the channel
+        server_id (int): ID of the server
+
+    Returns:
+        int: ID of the channel
+    """
+    guild = bot.get_guild(server_id)
+    for channel in guild.text_channels:
+        if channel.name == channel_name:
+            return channel.id
+    return None
+
 
 async def create_channel_for_this_pc(server: int, category_id: int = None):
     """
@@ -50,6 +76,13 @@ async def create_channel_for_this_pc(server: int, category_id: int = None):
             print('Creating new channel:', uname)
         await guild.create_text_channel(uname, category=category)
 
+    if VERBOSE:
+        print('Setting channel ID')
+    CHANNEL_ID = get_channel_id(uname, SERVER_ID)
+    if CHANNEL_ID is None:
+        raise Exception(
+            'Channel ID is None, unable to verify if channel was created!')
+
 
 @bot.event
 async def on_ready():
@@ -62,13 +95,39 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    message_content = message.content
-    message_author = message.author
-    message_channel = message.channel
     # print(message)
     if VERBOSE:
         print(
-            f'New message -> {message_author}, in channel: {message_channel}, said: {message_content}')
+            f'New message -> {message.author}, in channel: {message.channel}, said: {message.content}')
+
+    # test for right server
+    if message.guild.id != SERVER_ID:
+        if VERBOSE:
+            print(WARNING, 'Wrong server: {0.guild.id}'.format(message))
+        return
+
+    # test for right category
+    if message.channel.category_id != CATEGORY_ID:
+        if VERBOSE:
+            print(
+                INFO, 'Wrong category: {0.channel.category_id}'.format(message))
+        return
+
+    # test for right channel
+    if message.channel.id != CHANNEL_ID:
+        if VERBOSE:
+            print(INFO, 'Wrong channel: {0.channel.id}'.format(message))
+        return
+
+    # check if message is a command
+    if not message.content.startswith(COMMAND_PREFIX):
+        if VERBOSE:
+            print(INFO, 'Not a command: {0.content}'.format(message))
+        await message.send(
+            f'Not a valid command! \n' + 
+            f'\t you started with: {message.content[0]} \n' + 
+            f'\t command prefix is: {COMMAND_PREFIX}')
+
     await bot.process_commands(message)
 
 
@@ -95,6 +154,7 @@ def split_message(message: str, max_length: int = 2000):
     """
     return [message[i:i+max_length] for i in range(0, len(message), max_length)]
 
+
 async def send_message_to_channel(channel_id: int, message: str):
     """
     Sends a message to a channel
@@ -107,6 +167,7 @@ async def send_message_to_channel(channel_id: int, message: str):
     for msg in split_message(message):
         await channel.send(msg)
 
+
 @bot.command()
 async def run(ctx, arg):
     commnad, *args = arg.split(' ')
@@ -117,7 +178,7 @@ async def run(ctx, arg):
     )
     if VERBOSE:
         print(output)
-    
+
     await send_message_to_channel(ctx.channel.id, output.stdout.decode('utf-8'))
 
 
@@ -149,7 +210,7 @@ def arg_parser():
                         help='Enable debug mode')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose mode')
-    parser.add_argument('-c', '--config', action='store_true', 
+    parser.add_argument('-c', '--config', action='store_true',
                         help='Create new config file')
 
     args = parser.parse_args()
@@ -177,7 +238,8 @@ def create_config(config_file: str = CONFIG_FILE):
 
     json.dump(config, open(config_file, 'w'), indent=4, sort_keys=True)
 
-def load_config(config_file: str = CONFIG_FILE):
+
+def load_config(config_file: str = CONFIG_FILE) -> tuple:
     """
     Loads config file
 
@@ -192,12 +254,12 @@ def load_config(config_file: str = CONFIG_FILE):
         print(json.dumps(config, indent=4, sort_keys=True))
     return config['API_TOKEN'], config['CHANNEL_ID'], config['SERVER_ID'], config['CATEGORY_ID']
 
+
 API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID = load_config()
 
 if __name__ == "__main__":
     arg_parser()
-    
+
     print(API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID)
 
     bot.run(API_TOKEN)
-    
