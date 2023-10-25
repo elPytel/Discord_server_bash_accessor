@@ -1,8 +1,5 @@
 # Discord server bash accessor
-
-## Configuration
-Run apllication with option `python3 main.py --config` to create a config file. You nead to do it set the API key and server ID.
-
+This is a discord bot that allows you to run bash commands on the host machine and send files from it.
 
 ## Instalation 
 ### Automatic
@@ -12,7 +9,10 @@ Run `install.sh` script and grant it root axcess to install service and all depe
 #### pip dependencies
 ``` bash
 pip install -r requirements.txt
-``` 
+```
+
+#### Configuration
+Run apllication with option `python3 main.py --config` to create a config file. You nead to do it set the API key and server ID.
 
 #### Demonization
 Change path your scipt
@@ -51,4 +51,20 @@ sudo systemctl restart discordBashAccessor.service
 To check status.
 ``` bash
 sudo systemctl status discordBashAccessor.service
+```
+
+## Usage
+Bot will be online when you start service. 
+### Commands
+
+#### Run
+Will run bash command o host machine and return output.
+```
+$run "bash command"
+```
+
+#### File
+Will send file from host machine.
+```
+$file "path to file"
 ```

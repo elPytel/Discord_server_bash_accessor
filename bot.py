@@ -1,6 +1,5 @@
 # By Pytel
 
-import os
 import json
 import random
 import socket
@@ -19,7 +18,6 @@ CHANNEL_ID = None
 SERVER_ID = None
 CATEGORY_ID = None
 PIPE_PATH = '/dev/shm/discord_pipe'
-PIPE_PATH = 'discord_pipe'
 PIPE_READING_PERIOD_S = 10
 
 ERROR = '❌'
@@ -101,7 +99,7 @@ async def on_ready():
     await create_channel_for_this_pc(SERVER_ID, CATEGORY_ID)
     if VERBOSE:
         print('Starting pipe reading task...')
-    # create_pipe()
+    # create_pipe(PIPE_PATH)
     send_message_from_pipe.start()
     print('------')
 
@@ -181,6 +179,24 @@ async def run(ctx, arg):
 
     await send_message_to_channel(ctx.channel.id, output.stdout.decode('utf-8'))
 
+@bot.command()
+async def file(ctx, arg):
+    """
+    Sends a file to a channel.
+    """
+    file_name = arg.split('/')[-1]
+    file_path = arg
+    # do file exist?
+    if not os.path.isfile(file_path):
+        await ctx.send('File does not exist!')
+        return
+    # is file too big?
+    if os.path.getsize(file_path) > 8 * 1024 * 1024:
+        await ctx.send('File is too big!')
+        return
+    # send file
+    await ctx.send(file=discord.File(file_path, filename=file_name))
+
 
 @bot.command()
 async def roll(ctx, dice: str):
@@ -250,26 +266,12 @@ def load_config(config_file: str = CONFIG_FILE) -> tuple:
 API_TOKEN, SERVER_ID, CATEGORY_ID = load_config()
 
 
-def read_pipe(pipe: str = PIPE_PATH) -> str:
-    with open(pipe, 'r', encoding='utf-8') as f:
-        return f.read()
-
-# create pipe if it doesn't exist
-
-
-def create_pipe(pipe: str = PIPE_PATH):
-    try:
-        os.mkfifo(pipe)
-    except FileExistsError:
-        pass
-
-
 @tasks.loop(seconds=PIPE_READING_PERIOD_S)
 async def send_message_from_pipe():
     """
     Sends a message from a pipe to a channel
     """
-    message = read_pipe()
+    message = read_pipe(PIPE_PATH)
     if message:
         await send_message_to_channel(CHANNEL_ID, message)
     elif DEBUG:
