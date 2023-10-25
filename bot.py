@@ -1,14 +1,14 @@
 # By Pytel
 
+import os
 import json
-import discord
-from discord.ext import commands,tasks
 import random
 import socket
 import argparse
 import subprocess
+import discord
+from discord.ext import commands, tasks
 from tools import *
-import os
 
 DEBUG = True
 VERBOSE = True
@@ -36,6 +36,7 @@ bot = commands.Bot(command_prefix=COMMAND_PREFIX,
                    description=description, intents=intents)
 guild = discord.Guild
 
+
 def get_channel_id(channel_name: str, server_id: int) -> int:
     """
     Gets channel ID from channel name
@@ -52,6 +53,7 @@ def get_channel_id(channel_name: str, server_id: int) -> int:
         if channel.name == channel_name:
             return channel.id
     return None
+
 
 async def create_channel_for_this_pc(server: int, category_id: int = None):
     """
@@ -99,10 +101,9 @@ async def on_ready():
     await create_channel_for_this_pc(SERVER_ID, CATEGORY_ID)
     if VERBOSE:
         print('Starting pipe reading task...')
-    #create_pipe()
+    # create_pipe()
     send_message_from_pipe.start()
     print('------')
-    # await sendFromConsole()
 
 
 @bot.event
@@ -194,15 +195,6 @@ async def roll(ctx, dice: str):
     await ctx.send(result)
 
 
-@bot.event
-async def sendFromConsole():
-    run = True
-    while run:
-        message = input('Enter message: ')
-        channel = bot.get_channel(CHANNEL_ID)
-        await channel.send(message)
-
-
 def arg_parser():
     parser = argparse.ArgumentParser(description='Discord bot')
     parser.add_argument('-d', '--debug', action='store_true',
@@ -236,7 +228,7 @@ def create_config(config_file: str = CONFIG_FILE):
     config['SERVER_ID'] = int(input('Enter server ID: '))
     config['CATEGORY_ID'] = int(input('Enter category ID: '))
 
-    json.dump(config, open(config_file, 'w'), indent=4, sort_keys=True)
+    json.dump(config, open(config_file, 'w', encoding='utf-8'), indent=4, sort_keys=True)
 
 
 def load_config(config_file: str = CONFIG_FILE) -> tuple:
@@ -249,7 +241,7 @@ def load_config(config_file: str = CONFIG_FILE) -> tuple:
     Returns:
         tuple: Tuple containing API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID
     """
-    config = json.load(open(CONFIG_FILE))
+    config = json.load(open(CONFIG_FILE, 'r', encoding='utf-8'))
     if DEBUG:
         print(json.dumps(config, indent=4, sort_keys=True))
     return config['API_TOKEN'], config['SERVER_ID'], config['CATEGORY_ID']
@@ -257,17 +249,21 @@ def load_config(config_file: str = CONFIG_FILE) -> tuple:
 
 API_TOKEN, SERVER_ID, CATEGORY_ID = load_config()
 
+
 def read_pipe(pipe: str = PIPE_PATH) -> str:
-    with open(pipe, 'r') as f:
+    with open(pipe, 'r', encoding='utf-8') as f:
         return f.read()
-    
+
 # create pipe if it doesn't exist
+
+
 def create_pipe(pipe: str = PIPE_PATH):
     try:
         os.mkfifo(pipe)
     except FileExistsError:
         pass
-    
+
+
 @tasks.loop(seconds=PIPE_READING_PERIOD_S)
 async def send_message_from_pipe():
     """
