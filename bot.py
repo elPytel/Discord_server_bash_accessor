@@ -2,12 +2,13 @@
 
 import json
 import discord
-from discord.ext import commands
+from discord.ext import commands,tasks
 import random
 import socket
 import argparse
 import subprocess
 from tools import *
+import os
 
 DEBUG = True
 VERBOSE = True
@@ -17,6 +18,9 @@ API_TOKEN = None
 CHANNEL_ID = None
 SERVER_ID = None
 CATEGORY_ID = None
+PIPE_PATH = '/dev/shm/discord_pipe'
+PIPE_PATH = 'discord_pipe'
+PIPE_READING_PERIOD_S = 10
 
 ERROR = '❌'
 SUCCESS = '✅'
@@ -93,6 +97,10 @@ async def on_ready():
     print('Hello {0.user} !'.format(bot))
     await bot.change_presence(activity=discord.Game('👀'))
     await create_channel_for_this_pc(SERVER_ID, CATEGORY_ID)
+    if VERBOSE:
+        print('Starting pipe reading task...')
+    #create_pipe()
+    send_message_from_pipe.start()
     print('------')
     # await sendFromConsole()
 
@@ -203,6 +211,8 @@ def arg_parser():
                         help='Enable verbose mode')
     parser.add_argument('-c', '--config', action='store_true',
                         help='Create new config file')
+    parser.add_argument('-p', '--pipe', action='store_true',
+                        help='Start with pipe reading task')
 
     args = parser.parse_args()
     # DEBUG = args.debug
@@ -246,6 +256,29 @@ def load_config(config_file: str = CONFIG_FILE) -> tuple:
 
 
 API_TOKEN, SERVER_ID, CATEGORY_ID = load_config()
+
+def read_pipe(pipe: str = PIPE_PATH) -> str:
+    with open(pipe, 'r') as f:
+        return f.read()
+    
+# create pipe if it doesn't exist
+def create_pipe(pipe: str = PIPE_PATH):
+    try:
+        os.mkfifo(pipe)
+    except FileExistsError:
+        pass
+    
+@tasks.loop(seconds=PIPE_READING_PERIOD_S)
+async def send_message_from_pipe():
+    """
+    Sends a message from a pipe to a channel
+    """
+    message = read_pipe()
+    if message:
+        await send_message_to_channel(CHANNEL_ID, message)
+    elif DEBUG:
+        print('No message in pipe...')
+
 
 if __name__ == "__main__":
     arg_parser()
