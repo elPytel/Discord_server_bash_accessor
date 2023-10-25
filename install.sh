@@ -10,6 +10,9 @@ fi
 echo "Installing required libraries..."
 pip install -r requirements.txt
 
+# create config file
+echo "Creating config file..."
+python3 bot.py --config
 
 # check if systemd is installed
 if ! [ -x "$(command -v systemctl)" ]; then
