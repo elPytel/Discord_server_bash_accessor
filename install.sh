@@ -22,18 +22,18 @@ fi
 
 # change path to script
 echo "Changing path to script..."
-sed -i "s|<path>|$(pwd)|g" ./discrodBashAccessor.service
+sed -i "s|<path>|$(pwd)|g" ./discordBashAccessor.service
 
 # set up system service
 echo "Setting up system service..."
-cp ./discrodBashAccessor.service /etc/systemd/system/discrodBashAccessor.service
+cp ./discordBashAccessor.service /etc/systemd/system/discordBashAccessor.service
 systemctl daemon-reload
-systemctl enable discrodBashAccessor.service
-systemctl start discrodBashAccessor.service
+systemctl enable discordBashAccessor.service
+systemctl start discordBashAccessor.service
 
 # check if service is running
-if ! systemctl is-active --quiet discrodBashAccessor.service; then
-  echo 'Error: discrodBashAccessor.service is not running.' >&2
+if ! systemctl is-active --quiet discordBashAccessor.service; then
+  echo 'Error: discordBashAccessor.service is not running.' >&2
   exit 1
 fi
 

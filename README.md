@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 #### Demonization
 Change path your scipt
-Copy `discrodBashAccessor.service` to `/etc/systemd/system/`.
+Copy `discordBashAccessor.service` to `/etc/systemd/system/`.
 
 Now we need to reload the daemon.
 ``` bash
@@ -25,12 +25,12 @@ sudo systemctl daemon-reload
 
 Let’s enable our service so that it doesn’t get disabled if the server restarts.
 ``` bash
-sudo systemctl enable discrodBashAccessor.service
+sudo systemctl enable discordBashAccessor.service
 ```
 
 And now let’ start our service.
 ``` bash
-sudo systemctl start discrodBashAccessor.service
+sudo systemctl start discordBashAccessor.service
 ```
 
 Now our service is up and running.
@@ -40,15 +40,15 @@ There are several commands you can do to start, stop, restart, and check status.
 
 To stop the service.
 ``` bash
-sudo systemctl stop discrodBashAccessor.service
+sudo systemctl stop discordBashAccessor.service
 ```
 
 To restart.
 ``` bash
-sudo systemctl restart discrodBashAccessor.service
+sudo systemctl restart discordBashAccessor.service
 ```
 
 To check status.
 ``` bash
-sudo systemctl status discrodBashAccessor.service
+sudo systemctl status discordBashAccessor.service
 ```
