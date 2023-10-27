@@ -8,6 +8,7 @@ import subprocess
 import discord
 from discord.ext import commands, tasks
 from tools import *
+import asyncio
 
 DEBUG = True
 VERBOSE = True
@@ -18,6 +19,7 @@ CHANNEL_ID = None
 SERVER_ID = None
 CATEGORY_ID = None
 PIPE_PATH = '/dev/shm/discord_pipe'
+PIPE_PATH = 'discord_pipe'
 PIPE_READING_PERIOD_S = 10
 
 ERROR = '❌'
@@ -272,6 +274,7 @@ async def send_message_from_pipe():
     Sends a message from a pipe to a channel
     """
     message = await read_pipe(PIPE_PATH)
+    print(f"Opened pipe successfully: {message}")
     if message:
         await send_message_to_channel(CHANNEL_ID, message)
     elif DEBUG:

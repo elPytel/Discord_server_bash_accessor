@@ -1,11 +1,12 @@
 # By Pytel
 
 import os
-from async_timeout import timeout
+import asyncio
+import async_timeout
 
 async def read_pipe(pipe: str, timeout: int=5) -> str:
     try:
-        async with timeout(timeout):
+        async with async_timeout.timeout(timeout):
             with open(pipe, 'r', encoding='utf-8') as f:
                 data = f.read()
                 return data
@@ -13,13 +14,15 @@ async def read_pipe(pipe: str, timeout: int=5) -> str:
         print(f"Pipe '{pipe}' does not exist.")
     except PermissionError:
         print(f"No permission to read from pipe '{pipe}'.")
+    except asyncio.TimeoutError:
+        print("Opening the pipe took too long.")
     except Exception as e:
         if 'Bad file descriptor' in str(e):
             print(f"Pipe '{pipe}' has been closed.")
         else:
             print(f"Error reading from pipe '{pipe}': {e}")
 
-    return None
+    return ""
 
 
 def create_pipe(pipe: str):
