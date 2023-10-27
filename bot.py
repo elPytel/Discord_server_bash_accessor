@@ -271,7 +271,7 @@ async def send_message_from_pipe():
     """
     Sends a message from a pipe to a channel
     """
-    message = read_pipe(PIPE_PATH)
+    message = await read_pipe(PIPE_PATH)
     if message:
         await send_message_to_channel(CHANNEL_ID, message)
     elif DEBUG:

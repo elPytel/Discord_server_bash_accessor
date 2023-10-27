@@ -1,12 +1,14 @@
 # By Pytel
 
 import os
+from async_timeout import timeout
 
-def read_pipe(pipe: str) -> str:
+async def read_pipe(pipe: str, timeout: int=5) -> str:
     try:
-        with open(pipe, 'r', encoding='utf-8') as f:
-            data = f.read()
-            return data
+        async with timeout(timeout):
+            with open(pipe, 'r', encoding='utf-8') as f:
+                data = f.read()
+                return data
     except FileNotFoundError:
         print(f"Pipe '{pipe}' does not exist.")
     except PermissionError:
