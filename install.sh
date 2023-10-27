@@ -12,6 +12,7 @@ pip install -r requirements.txt
 
 # create config file
 echo "Creating config file..."
+touch config.json
 python3 bot.py --config
 
 # check if systemd is installed
@@ -26,10 +27,10 @@ sed -i "s|<path>|$(pwd)|g" ./discordBashAccessor.service
 
 # set up system service
 echo "Setting up system service..."
-cp ./discordBashAccessor.service /etc/systemd/system/discordBashAccessor.service
-systemctl daemon-reload
-systemctl enable discordBashAccessor.service
-systemctl start discordBashAccessor.service
+sudo cp ./discordBashAccessor.service /etc/systemd/system/discordBashAccessor.service
+sudo systemctl daemon-reload
+sudo systemctl enable discordBashAccessor.service
+sudo systemctl start discordBashAccessor.service
 
 # check if service is running
 if ! systemctl is-active --quiet discordBashAccessor.service; then

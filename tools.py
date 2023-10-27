@@ -3,8 +3,21 @@
 import os
 
 def read_pipe(pipe: str) -> str:
-    with open(pipe, 'r', encoding='utf-8') as f:
-        return f.read()
+    try:
+        with open(pipe, 'r', encoding='utf-8') as f:
+            data = f.read()
+            return data
+    except FileNotFoundError:
+        print(f"Pipe '{pipe}' does not exist.")
+    except PermissionError:
+        print(f"No permission to read from pipe '{pipe}'.")
+    except Exception as e:
+        if 'Bad file descriptor' in str(e):
+            print(f"Pipe '{pipe}' has been closed.")
+        else:
+            print(f"Error reading from pipe '{pipe}': {e}")
+
+    return None
 
 
 def create_pipe(pipe: str):
