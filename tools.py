@@ -4,8 +4,23 @@ import os
 import asyncio
 import async_timeout
 
-async def read_pipe(pipe: str, timeout: int=5) -> str:
+def pipe_is_empty(pipe_path: str) -> bool:
     try:
+        if os.path.exists(pipe_path):
+            return os.path.getsize(pipe_path) == 0
+        else:
+            print(f"Pipe '{pipe_path}' does not exist.")
+            return True  # Pipe does not exist or cannot be accessed
+    except Exception as e:
+        print(f"Error while checking pipe '{pipe_path}': {e}")
+        return True  # Error occurred while checking the pipe
+
+async def read_pipe(pipe: str, timeout: int=5) -> str:
+    if pipe_is_empty(pipe):
+        return ""
+
+    try:
+        # timeout is not working!
         async with async_timeout.timeout(timeout):
             with open(pipe, 'r', encoding='utf-8') as f:
                 data = f.read()
