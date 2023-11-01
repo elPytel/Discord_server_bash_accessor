@@ -5,6 +5,16 @@ import asyncio
 import async_timeout
 
 def pipe_is_empty(pipe_path: str) -> bool:
+    """
+    Checks if a named pipe size is 0.
+    If the pipe does not exist, it returns True.
+
+    Args:
+        pipe_path (str): Path to the pipe
+
+    Returns:
+        bool: True if pipe is empty or does not exist, False otherwise
+    """
     try:
         if os.path.exists(pipe_path):
             return os.path.getsize(pipe_path) == 0
@@ -16,6 +26,17 @@ def pipe_is_empty(pipe_path: str) -> bool:
         return True  # Error occurred while checking the pipe
 
 async def read_pipe(pipe: str, timeout: int=5) -> str:
+    """
+    Reads text from a named pipe.
+    Automatically tests if the pipe is empty.
+
+    Args:
+        pipe (str): Path to the pipe
+        timeout (int, optional): Timeout in seconds. Defaults to 5.
+
+    Returns:
+        str: Data from the pipe or empty string if pipe is empty
+    """
     if pipe_is_empty(pipe):
         return ""
 

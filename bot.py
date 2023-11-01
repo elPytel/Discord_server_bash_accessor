@@ -32,10 +32,10 @@ COMMAND_PREFIX = '$'
 intents = discord.Intents.default()
 intents.message_content = True
 description = '''Server controler bot'''
-bot = commands.Bot(command_prefix=COMMAND_PREFIX,
-                   description=description, intents=intents)
-guild = discord.Guild
 
+bot = commands.Bot(command_prefix=COMMAND_PREFIX,
+                description=description, intents=intents)
+#guild = discord.Guild
 
 def get_channel_id(channel_name: str, server_id: int) -> int:
     """
@@ -214,6 +214,8 @@ async def roll(ctx, dice: str):
 
 
 def arg_parser():
+    global DEBUG
+    global VERBOSE
     parser = argparse.ArgumentParser(description='Discord bot')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Enable debug mode')
@@ -225,13 +227,14 @@ def arg_parser():
                         help='Start with pipe reading task')
 
     args = parser.parse_args()
-    # DEBUG = args.debug
-    # VERBOSE = args.verbose
+    DEBUG = args.debug
+    VERBOSE = args.verbose
     if DEBUG:
         print(args)
     if args.config:
         create_config()
         exit(0)
+    return args
 
 
 def create_config(config_file: str = CONFIG_FILE):
@@ -265,25 +268,22 @@ def load_config(config_file: str = CONFIG_FILE) -> tuple:
     return config['API_TOKEN'], config['SERVER_ID'], config['CATEGORY_ID']
 
 
-API_TOKEN, SERVER_ID, CATEGORY_ID = load_config()
-
-
 @tasks.loop(seconds=PIPE_READING_PERIOD_S)
 async def send_message_from_pipe():
     """
     Sends a message from a pipe to a channel
     """
     message = await read_pipe(PIPE_PATH)
-    print(f"Opened pipe successfully: {message}")
     if message:
         await send_message_to_channel(CHANNEL_ID, message)
+        if DEBUG:
+            print(f"Opened pipe successfully: {message}")
     elif DEBUG:
         print('No message in pipe...')
 
 
 if __name__ == "__main__":
-    arg_parser()
-
-    print(API_TOKEN, SERVER_ID, CATEGORY_ID)
+    arg_parser()    
+    API_TOKEN, SERVER_ID, CATEGORY_ID = load_config()
 
     bot.run(API_TOKEN)
