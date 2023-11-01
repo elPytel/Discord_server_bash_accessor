@@ -1,6 +1,5 @@
 # By Pytel
 
-import json
 import random
 import socket
 import subprocess
@@ -21,56 +20,41 @@ WARNING = '⚠️'
 INFO = 'ℹ️'
 
 
-def create_config(config_file: str = CONFIG_FILE):
-    """
-    Creates a new config file
-
-    Args:
-        config_file (str, optional): Path to config file. Defaults to CONFIG_FILE.
-    """
-    config = {}
-    config['API_TOKEN'] = input('Enter API token: ')
-    config['SERVER_ID'] = int(input('Enter server ID: '))
-    config['CATEGORY_ID'] = int(input('Enter category ID: '))
-
-    json.dump(config, open(config_file, 'w', encoding='utf-8'),
-              indent=4, sort_keys=True)
-
-
-def load_config(config_file: str = CONFIG_FILE) -> tuple:
-    """
-    Loads config file
-
-    Args:
-        config_file (str, optional): Path to config file. Defaults to CONFIG_FILE.
-
-    Returns:
-        tuple: Tuple containing API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID
-    """
-    config = json.load(open(CONFIG_FILE, 'r', encoding='utf-8'))
-    if DEBUG:
-        print(json.dumps(config, indent=4, sort_keys=True))
-    return config['API_TOKEN'], config['SERVER_ID'], config['CATEGORY_ID']
-
-
 class MyBot(commands.Bot):
     COMMAND_PREFIX = '$'
+    CHANNEL_ID = None
     PIPE_READING_PERIOD_S = 10
 
     intents = discord.Intents.default()
     intents.message_content = True
     description = '''Server controler bot'''
 
+    def __str__(self):
+        text = str(
+            " - API_TOKEN: \n" + self.API_TOKEN + "\n" + 
+            " - SERVER_ID: \t" + str(self.SERVER_ID) + "\n" + 
+            " - CATEGORY_ID: " + str(self.CATEGORY_ID) + "\n" + 
+            " - CHANNEL_ID: " + str(self.CHANNEL_ID) + "\n" +
+            " - COMMAND_PREFIX: " + self.COMMAND_PREFIX + "\n" + 
+            " - PIPE_READING_PERIOD_S: " + str(self.PIPE_READING_PERIOD_S) + "\n" + 
+            " - description: " + self.description + "\n" + 
+            " - args: " + str(self.args))
+        
+        return text
+
     def __init__(self, args, command_prefix=COMMAND_PREFIX, self_bot=False):
         if args.config:
-            create_config()
+            create_config(CONFIG_FILE)
             exit(0)
 
         super().__init__(command_prefix=command_prefix,
                          description=self.description, intents=self.intents, self_bot=self_bot)
         self.args = args
-        self.API_TOKEN, self.SERVER_ID, self.CATEGORY_ID = load_config()
+        self.API_TOKEN, self.SERVER_ID, self.CATEGORY_ID = load_config(
+            CONFIG_FILE)
         self.add_commands()
+        if DEBUG:
+            print(self)
 
     async def on_ready(self):
         print('Hello {0.user} !'.format(self))
@@ -81,7 +65,7 @@ class MyBot(commands.Bot):
             # create_pipe(PIPE_PATH)
             if VERBOSE:
                 print('Starting pipe reading task...')
-            MyBot.send_message_from_pipe.start()
+            self.send_message_from_pipe.start()
         print('------')
 
     async def on_message(self, message):
@@ -104,7 +88,7 @@ class MyBot(commands.Bot):
             return
 
         # test for right channel
-        if message.channel.id != CHANNEL_ID:
+        if message.channel.id != self.CHANNEL_ID:
             if VERBOSE:
                 print(INFO, 'Wrong channel: {0.channel.id}'.format(message))
             return
@@ -163,12 +147,12 @@ class MyBot(commands.Bot):
                 print('Creating new channel:', uname)
             await guild.create_text_channel(uname, category=category)
 
-        global CHANNEL_ID
-        CHANNEL_ID = self.get_channel_id(uname, server)
+        
+        self.CHANNEL_ID = self.get_channel_id(uname, server)
         if VERBOSE:
-            print('Setting channel ID to:', CHANNEL_ID)
+            print('Setting channel ID to:', self.CHANNEL_ID)
 
-        if CHANNEL_ID is None:
+        if self.CHANNEL_ID is None:
             print("Channel: {0} not in server: {1}".format(uname, server))
             for channel in guild.text_channels:
                 print(channel.name)
@@ -210,7 +194,7 @@ class MyBot(commands.Bot):
             if VERBOSE:
                 print(output)
 
-            await self.send_message_to_channel(ctx.channel.id, output.stdout.decode('utf-8'))
+            await MyBot.send_message_to_channel(ctx.channel.id, output.stdout.decode('utf-8'))
 
         @self.command()
         async def file(ctx, arg):
@@ -244,14 +228,14 @@ class MyBot(commands.Bot):
             await ctx.send(result)
 
     @tasks.loop(seconds=PIPE_READING_PERIOD_S)
-    async def send_message_from_pipe():
+    async def send_message_from_pipe(self):
         """
         Sends a message from a pipe to a channel in interval of PIPE_READING_PERIOD_S seconds
         """
         message = await read_pipe(PIPE_PATH)
-        if message:
-            print("" + CHANNEL_ID + " " + message)
-            await MyBot.send_message_to_channel(CHANNEL_ID, message)
+        print(str(self.CHANNEL_ID) + " " + message)
+        if message:            
+            await MyBot.send_message_to_channel(self.CHANNEL_ID, message)
             if DEBUG:
                 print(f"Opened pipe successfully: {message}")
         elif DEBUG:

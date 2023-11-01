@@ -1,8 +1,40 @@
 # By Pytel
 
 import os
+import json
 import asyncio
 import async_timeout
+
+def create_config(config_file: str):
+    """
+    Creates a new config file
+
+    Args:
+        config_file (str, optional): Path to config file.
+    """
+    config = {}
+    config['API_TOKEN'] = input('Enter API token: ')
+    config['SERVER_ID'] = int(input('Enter server ID: '))
+    config['CATEGORY_ID'] = int(input('Enter category ID: '))
+
+    json.dump(config, open(config_file, 'w', encoding='utf-8'),
+              indent=4, sort_keys=True)
+
+
+def load_config(config_file: str) -> tuple:
+    """
+    Loads config file
+
+    Args:
+        config_file (str, optional): Path to config file.
+
+    Returns:
+        tuple: Tuple containing API_TOKEN, CHANNEL_ID, SERVER_ID, CATEGORY_ID
+    """
+    config = json.load(open(config_file, 'r', encoding='utf-8'))
+    #print(json.dumps(config, indent=4, sort_keys=True))
+    return config['API_TOKEN'], config['SERVER_ID'], config['CATEGORY_ID']
+
 
 def pipe_is_empty(pipe_path: str) -> bool:
     """

@@ -1,7 +1,6 @@
 # By Pytel
 
 import argparse
-from tools import *
 from MyBot import *
 
 def arg_parser():
@@ -20,8 +19,6 @@ def arg_parser():
     args = parser.parse_args()
     DEBUG = args.debug
     VERBOSE = args.verbose
-    if DEBUG:
-        print(args)
     return args
 
 if __name__ == "__main__":
